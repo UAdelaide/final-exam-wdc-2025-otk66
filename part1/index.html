@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Dog of the Day</title>
+  <script src="https://unpkg.com/vue@3"></script>
+  <style>
+    body {
+      background-color: #ccc;
+      font-family: Comic Sans MS;
+      color: #999;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+    }
+    .dog-info {
+      animation: spin 3s infinite linear;
+      font-size: 1.2rem;
+      margin-top: 2rem;
+    }
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    button {
+      background-color: #eeeeee;
+      color: #eeeeee;
+      border: none;
+      padding: 10px;
+      margin-top: 1rem;
+      font-size: 1.2rem;
+    }
+    img {
+      width: 90vw;
+      height: auto;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <h1>Click many times to see Dogs</h1>
+    <button @click="clickCount++">Click Me ({{ clickCount }})</button>
+
+    <div v-if="clickCount >= 5">
+      <img :src="dogImage" alt="">
+      <div class="dog-info">
+        Name: Waffle<br>
+        Breed: Super Unknown Mix of Fluff<br>
+        Age: Between 1 and 100
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { createApp } = Vue;
+
+    createApp({
+      data() {
+        return {
+          dogImage: '',
+          clickCount: 0
+        };
+      },
+      watch: {
+        clickCount(val) {
+          if (val === 5) {
+            fetch('https://dog.ceo/api/breeds/image/random')
+              .then(res => res.json())
+              .then(data => {
+                this.dogImage = data.message;
+              });
+          }
+        }
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>

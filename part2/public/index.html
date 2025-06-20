@@ -28,6 +28,23 @@
         {{ error }}
       </div>
     </div>
+    <h2 class="mt-5">All Dogs</h2>
+    <table class="table table-bordered table-striped">
+      <thead class="table-light">
+        <tr>
+          <th>Name</th>
+          <th>Size</th>
+          <th>Photo</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="dog in dogs" :key="dog.dog_id">
+          <td>{{ dog.name }}</td>
+          <td>{{ dog.size }}</td>
+          <td><img :src="dog.photo" alt="Dog photo" style="width: 120px; height: auto;"></td>
+        </tr>
+      </tbody>
+    </table>
     <!-- <p class="lead">Connect with trusted walkers for your beloved dog!</p>
 
     <a href="owner-dashboard.html" class="btn btn-outline-primary me-2">Owner Dashboard</a>
@@ -42,7 +59,8 @@
           message: 'Welcome to the Dog Walking Service!',
           username: '',//user information
           password: '',
-          error: ''
+          error: '',
+          dogs: []
         };
       },
       methods: {
@@ -59,12 +77,13 @@
             })
           });
                     const data = await response.json();
+                    console.log('Login response:', data);
 
           if (response.ok) {
             // Jump to the related dashboard
-            if (data.role === 'owner') {
+            if (data.user.role === 'owner') {
               window.location.href = '/owner-dashboard.html';
-            } else if (data.role === 'walker') {
+            } else if (data.user.role === 'walker') {
               window.location.href = '/walker-dashboard.html';
             }
           } else {
@@ -73,8 +92,31 @@
         } catch (err) {
           this.error = 'Something went wrong. Try again.';
         }
+      },
+      async fetchDogs() {
+      try {
+        const res = await fetch('/api/dogs');
+        const dogList = await res.json();
+
+        const enriched = await Promise.all(dogList.map(async dog => {
+          const imgRes = await fetch('https://dog.ceo/api/breeds/image/random');
+          const imgData = await imgRes.json();
+          return {
+            ...dog,
+            photo: imgData.message
+          };
+        }));
+
+        this.dogs = enriched;
+      } catch (err) {
+        console.error('Failed to fetch dogs or photos:', err);
       }
     }
+  },
+    
+    mounted() {
+    this.fetchDogs(); // log dogs
+  }
     }).mount('#app');
   </script>
 

@@ -5,7 +5,7 @@ const db = require('../models/db');
 // GET all users (for admin/testing)
 router.get('/', async (req, res) => {
   try {
-    const [rows] = await db.query('SELECT user_id, username, email, role FROM Users');
+    const [rows] = await db.query('SELECT user_id, username, username, role FROM Users');
     res.json(rows);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch users' });
@@ -20,7 +20,7 @@ router.post('/register', async (req, res) => {
     const [result] = await db.query(`
       INSERT INTO Users (username, email, password_hash, role)
       VALUES (?, ?, ?, ?)
-    `, [username, email, password, role]);
+    `, [username, username, password, role]);
 
     res.status(201).json({ message: 'User registered', user_id: result.insertId });
   } catch (error) {
@@ -37,22 +37,42 @@ router.get('/me', (req, res) => {
 
 // POST login (dummy version)
 router.post('/login', async (req, res) => {
-  const { email, password } = req.body;
+  const { username, password } = req.body; // use username same as front instead of email
 
   try {
     const [rows] = await db.query(`
       SELECT user_id, username, role FROM Users
-      WHERE email = ? AND password_hash = ?
-    `, [email, password]);
+      WHERE username = ? AND password_hash = ?
+    `, [username, password]);
 
     if (rows.length === 0) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
+    const user = rows[0];
+
+    // save the login status into session
+    req.session.user = {
+      id: user.user_id,
+      username: user.username,
+      role: user.role
+    };
 
     res.json({ message: 'Login successful', user: rows[0] });
   } catch (error) {
     res.status(500).json({ error: 'Login failed' });
   }
+});
+// POST /api/users/logout
+router.post('/logout', (req, res) => {
+  req.session.destroy(err => {
+    if (err) {
+      return res.status(500).json({ error: 'Logout failed' });
+    }
+
+    // clear session cookie
+    res.clearCookie('connect.sid');
+    res.json({ message: 'Logged out' });
+  });
 });
 
 module.exports = router;
